@@ -8,7 +8,7 @@ DEMファイルを読み込みそれを matplotlib で表示する
 
 ### 使用法
 
-python demplot.py [--nodata <intvalue>] [--asis] <input-file>
+python demplot.py [--nodata <intvalue>] [--asis] input-file
 
 --nodata <intvalue>  欠落値 このオプションが指定されなければ欠落値は -9999 となる。
 
