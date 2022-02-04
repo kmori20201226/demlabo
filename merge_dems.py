@@ -15,7 +15,10 @@ import matplotlib.pyplot as plt
 class CommandException(Exception):
     pass
 
-def debug_img(mesh2, dem10, dem5, result):
+DEBUG2 = False
+DEBUG3 = True
+
+def debug_img3(mesh2, dem10, dem5, result):
     fig = plt.figure()
     fig.canvas.manager.set_window_title(mesh2)
     ax1 = fig.add_subplot(1, 3, 1)
@@ -32,9 +35,23 @@ def debug_img(mesh2, dem10, dem5, result):
     ax3.imshow(result)
     plt.show()
 
+def debug_img2(mesh2, org, result):
+    fig = plt.figure()
+    fig.canvas.manager.set_window_title(mesh2)
+    ax1 = fig.add_subplot(1, 2, 1)
+    ax1.set_title("INPUT")
+    ax1.axis('off')
+    ax1.imshow(org)
+    ax3 = fig.add_subplot(1, 2, 2)
+    ax3.set_title("OUTPUT")
+    ax3.axis('off')
+    ax3.imshow(result)
+    plt.show()
+
 DEM5XSIZE = 225
 DEM5YSIZE = 150
 
+    
 def merge_mesh(mesh2, dem10_path, dem5_files):
     """DEM10 の上に DEM5 をマージする。
 
@@ -51,20 +68,24 @@ def merge_mesh(mesh2, dem10_path, dem5_files):
     dem10img, dem10meta = dem2image(dem10_path)
 
     dem10img = dem10img.repeat(2, axis=0).repeat(2, axis=1)
+    if DEBUG2: orgimg = dem10img.copy()
     for y in range(10):
         for x in range(10):
             xs = x * DEM5XSIZE
             ys = (9 - y) * DEM5YSIZE
             xe = xs + DEM5XSIZE
             ye = ys + DEM5YSIZE
+            cut = dem10img[ys:ye, xs:xe]
             dem5_path = dem5_files[y, x]
             if dem5_path is not None:
                 dem5img, dem5meta = dem2image(dem5_path)
-                cut = dem10img[ys:ye, xs:xe]
-                cutbak = cut.copy()  # DEBUG
+                if DEBUG3: cutbak = cut.copy()  # DEBUG
                 cut[~np.isnan(dem5img)] = dem5img[~np.isnan(dem5img)]
-                cut[np.isnan(cut)] = 0.0
-                debug_img(mesh2, cutbak, dem5img, cut)
+            cut[np.isnan(cut)] = 0.0
+            if DEBUG3:
+                debug_img3(mesh2, cutbak, dem5img, cut)
+    #dem10img[np.isnan(dem10img)] = 0.0
+    if DEBUG2: debug_img2(mesh2, orgimg, dem10img)
 
 def pick_dems(input_path, meshes):
     demtuples = list(enum_demfiles(input_path))
