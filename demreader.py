@@ -80,6 +80,7 @@ class D0:
     """DEM ファイルから読み込まれたメタデータ
 
     Attributes:
+        type (str): タイプ
         mesh (str): メッシュコード
         src  (str): 
         S (float): 南端緯度
@@ -90,8 +91,10 @@ class D0:
         lowy (int): 下端ピクセル位置
         highx (int): 右端ピクセル位置
         highy (int): 左端ピクセル位置
+        nodata_cnt (int|None): 欠落値数
     """
     def __init__(self):
+        self.type = None
         self.mesh = None
         self.src = None
         self.S = None
@@ -102,15 +105,25 @@ class D0:
         self.lowy = None
         self.highx = None
         self.highy = None
+        self.nodata_cnt = None
+    
+    def __repr__(self):
+        return "%s[%s,%s,%s,%s](%s,%s)-(%s,%s)" % (
+            self.mesh,
+            self.N, self.E, self.S, self.W,
+            self.lowx, self.lowy, self.highx, self.highy
+        )
 
-def dem2image(input_file, nodata=np.nan):
+def dem2image(input_file, nodata=np.nan, noimage=False):
     """DEMファイルを読み込み shapeが(y,x) の np.array を作る
 
     Args:
         input_file (str): DEM ファイル名
-    
+        nodata (bool): 設定する欠落値 (DEMファイル自身は-9999が欠落値として規定されている)
+        noimage (bool): 新であれば イメージを表す np.array を作らない (戻り値としてはNone)    
+
     Returns:
-        np.array, メタデータ (D0)
+        イメージデータ (np.array), メタデータ (D0)
     """
     def get2d(s):
         return (float(x) for x in s.text.split(" "))
@@ -123,7 +136,8 @@ def dem2image(input_file, nodata=np.nan):
     }
     root = tree.getroot()
     d0 = D0()
-    d0.mesh = root.find("./DEM/mesh", ns)
+    d0.type = root.find("./DEM/type", ns).text
+    d0.mesh = root.find("./DEM/mesh", ns).text
     b_envelope = root.find("./DEM/coverage/gml:boundedBy/gml:Envelope", ns)
     d0.src = b_envelope.attrib['srsName']
     d0.S, d0.W = get2d(b_envelope.find("./gml:lowerCorner", ns))
@@ -135,16 +149,25 @@ def dem2image(input_file, nodata=np.nan):
     dshape = (d0.highy - d0.lowy + 1, d0.highx - d0.lowx + 1) 
     startx, starty = get2i(root.find("./DEM/coverage/gml:coverageFunction/gml:GridFunction/gml:startPoint", ns))
     snum = (d0.highx + 1) * starty + startx
-    astring = np.empty(dshape[0]*dshape[1], np.float32)
-    astring.fill(nodata)
-    altvec = []
-    for line in tuplist.text.split("\n"):
-        if line.strip() != "":
-            larr = line.strip().split(",")
-            v = float(larr[1])
-            altvec += [v if v != -9999 else nodata]
-    altarr = np.array(altvec, np.float32)
-    astring[snum:snum+altarr.shape[0]] = altarr
-    plane = astring.reshape(dshape)
+    nodata_cnt = snum
+    if not noimage:
+        astring = np.empty(dshape[0]*dshape[1], np.float32)
+        astring.fill(nodata)
+        altvec = []
+        for line in tuplist.text.split("\n"):
+            if line.strip() != "":
+                larr = line.strip().split(",")
+                v = float(larr[1])
+                if v == -9999:
+                    nodata_cnt += 1
+                    altvec += [nodata]
+                else:
+                    altvec += [v]
+        altarr = np.array(altvec, np.float32)
+        astring[snum:snum+altarr.shape[0]] = altarr
+        plane = astring.reshape(dshape)
+        d0.nodata_cnt = nodata_cnt
+    else:
+        plane = None
     return plane, d0
 

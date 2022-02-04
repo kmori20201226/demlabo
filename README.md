@@ -2,13 +2,15 @@
 
 このプロジェクトは DEMファイルについて操作を行うツールを纏めたものである。
 
-## demplot.py
+参考： DEMデータ取得元 https://fgd.gsi.go.jp/download/menu.php
+
+## plot_dem.py
 
 DEMファイルを読み込みそれを matplotlib で表示する
 
 ### 使用法
 
-python demplot.py [--nodata <intvalue>] [--asis] input-file
+python plot_dem.py [--nodata <intvalue>] [--asis] input-file
 
 --nodata <intvalue>  欠落値 このオプションが指定されなければ欠落値は -9999 となる。
 
