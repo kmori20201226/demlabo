@@ -37,11 +37,20 @@ DEM10 と DEM5 マージし、その結果を matplotlib で表示する。
 
 ### 使用法
 
-python merge_dems.py input-dir [mesh...]
+python merge_dems.py [options] input-dir [mesh...]
+
+options:
+
+   --dem10  ... ２次メッシュ単位でマージ結果を出力する
+   --dem5   ... ３次メッシュ単位でマージ結果を出力する
+   --debug_dem10 ... ２次メッシュ単位でマージ結果を画面で確認する
+   --debug_dem5  ... ３次メッシュ単位でマージ結果を画面で確認する
 
 mesh は 9999-99 という形式で２次メッシュを指定する。このパラメータを付けると指定されたメッシュのみのマージを行う。
 
 ### 出力サンプル
+
+確認用画面表示
 
 ![merge01](samples/merge01.png)
 

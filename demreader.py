@@ -82,7 +82,7 @@ class D0:
     Attributes:
         type (str): タイプ
         mesh (str): メッシュコード
-        src  (str): 
+        srs  (str): source spatial reference
         S (float): 南端緯度
         N (float): 北端緯度
         W (float): 西端経度
@@ -96,7 +96,7 @@ class D0:
     def __init__(self):
         self.type = None
         self.mesh = None
-        self.src = None
+        self.srs = None
         self.S = None
         self.N = None
         self.E = None
@@ -139,7 +139,7 @@ def dem2image(input_file, nodata=np.nan, noimage=False):
     d0.type = root.find("./DEM/type", ns).text
     d0.mesh = root.find("./DEM/mesh", ns).text
     b_envelope = root.find("./DEM/coverage/gml:boundedBy/gml:Envelope", ns)
-    d0.src = b_envelope.attrib['srsName']
+    d0.srs = b_envelope.attrib['srsName']
     d0.S, d0.W = get2d(b_envelope.find("./gml:lowerCorner", ns))
     d0.N, d0.E = get2d(b_envelope.find("./gml:upperCorner", ns))
     domain = root.find("./DEM/coverage/gml:gridDomain/gml:Grid/gml:limits/gml:GridEnvelope", ns)
