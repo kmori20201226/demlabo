@@ -18,7 +18,6 @@ import os
 import re
 import sys
 import numpy as np
-from tqdm import tqdm
 from osgeo import gdal, ogr
 import argparse
 import matplotlib.pyplot as plt
@@ -108,11 +107,13 @@ def merge_mesh(mesh2, dem10_path, dem5_files, opt:MergeOptions):
             return os.path.join(opt.output_dir,
                     "FG-GML-%s.tiff" % (mesh2,))
 
+    print(dem10_path, flush=True)
     dem10img, dem10meta = dem2image(dem10_path)
     opt.read10_count += 1
     dem10img = dem10img.repeat(2, axis=0).repeat(2, axis=1)
     if opt.debug10: orgimg = dem10img.copy()
-    for y in range(10):
+    for y in range(9,-1,-1):
+        rowprogress = []
         for x in range(10):
             xs = x * DEM5XSIZE
             ys = (9 - y) * DEM5YSIZE
@@ -125,12 +126,16 @@ def merge_mesh(mesh2, dem10_path, dem5_files, opt:MergeOptions):
                 opt.read5_count += 1
                 if opt.debug5: cutbak = cut.copy()  # DEBUG
                 cut[~np.isnan(dem5img)] = dem5img[~np.isnan(dem5img)]
+                rowprogress += ["■"]
+            else:
+                rowprogress += ["□"]
             cut[np.isnan(cut)] = 0.0
             if opt.debug5:
                 debug_img3(mesh2, cutbak, dem5img, cut)
             if opt.output5:
                 write_geotiff(output_path(mesh2, "%d%d" % (y, x)), dem5img, dem5meta)
                 opt.output5_count += 1
+        print("  " + ("".join(rowprogress)), flush=True)
     #dem10img[np.isnan(dem10img)] = 0.0
     if opt.debug10:
         debug_img2(mesh2, orgimg, dem10img)
@@ -140,7 +145,7 @@ def merge_mesh(mesh2, dem10_path, dem5_files, opt:MergeOptions):
 
 def pick_dems(input_path, meshes, opt:MergeOptions):
     demtuples = list(enum_demfiles(input_path))
-    for mesh2, dem10_path, dem5_array in tqdm(demtuples):
+    for mesh2, dem10_path, dem5_array in demtuples:
         if not meshes or mesh2 in meshes:
             dem5s = np.full((10, 10), None)
             for y in range(10):
@@ -162,9 +167,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
     opt = MergeOptions()
     opt.output_dir = args.output
-    opt.output10 = args.dem10
-    opt.output5 = args.dem5
-    print("merge_dems %s" % (VERSION,))
+    try:
+        demcmd = os.environ['DEMCMD']
+        opt.output10 = opt.output5 = False
+        for cmd in demcmd.split(','):
+            if cmd == '--dem10': opt.output10 = True
+            if cmd == '--dem5': opt.output5 = True
+    except KeyError:
+        opt.output10 = args.dem10
+        opt.output5 = args.dem5
     st = datetime.now()
     try:
         if args.meshes:
@@ -172,6 +183,7 @@ if __name__ == '__main__':
                 mo = re.match(r"\d{4}-\d{2}$", m)
                 if mo is None:
                     raise CommandException("メッシュは 9999-99 形式で指定する必要がある")
+        print("%s %s" % (sys.argv[0], VERSION), flush=True)
         pick_dems(args.input_path, args.meshes, opt)
         print("2次メッシュDEMファイル数: %d" % (opt.read10_count,))
         print("3次メッシュDEMファイル数: %d" % (opt.read5_count,))

@@ -1,0 +1,15 @@
+version: '2'
+
+services:
+
+  dem-converter:
+    container_name: dem-converter
+    image: dem-converter
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DEMCMD=--dem10
+    volumes:
+      - ./demdata1:/input
+      - ./output:/output
