@@ -1,4 +1,18 @@
-"""Under construction (作成中)
+"""DEMデータをメッシュ毎にマージする
+
+DEMデータには5m間隔のものと10m間隔のものがある。5m間隔のものの
+特徴として河川等の標高の値が欠落している。その欠落した箇所のデータを
+10m間隔のものから補完する。10m間隔のものも海域はデータが欠落している
+ため、標高を0m とする。
+
+Usage :-
+
+  python merge_dems.py [options] <input-path> [mesh...]
+
+  options:
+    -o <output-path> 
+    --dem10  ... 出力単位を２次メッシュとする
+    --dem5   ... 出力単位を３次メッシュとする
 """
 import os
 import re
@@ -90,6 +104,7 @@ def merge_mesh(mesh2, dem10_path, dem5_files, opt:MergeOptions):
                     "FG-GML-%s-%s.tiff" % (mesh2, mesh3)
                     )
         else:
+            os.makedirs(opt.output_dir, exist_ok=True)
             return os.path.join(opt.output_dir,
                     "FG-GML-%s.tiff" % (mesh2,))
 
